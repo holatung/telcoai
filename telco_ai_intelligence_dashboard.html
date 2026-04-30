@@ -1,0 +1,758 @@
+
+<h2 class="sr-only">TelcoAI Intelligence Dashboard — real-time network, churn prediction, revenue analytics, and customer experience for telecommunications providers</h2>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0a1628; --navy2: #0f1f3d; --teal: #00c9b1; --teal2: #00f5d4;
+    --amber: #f5a623; --coral: #ff6b6b; --green: #22c55e; --blue: #3b82f6;
+    --purple: #8b5cf6; --text: #e2e8f0; --muted: #94a3b8; --border: rgba(255,255,255,0.08);
+    --card: rgba(255,255,255,0.04); --card-hover: rgba(255,255,255,0.07);
+  }
+  body { background: transparent; font-family: var(--font-sans, system-ui); color: var(--text); }
+
+  .shell { padding: 0; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(0,201,177,0.07); border-bottom: 0.5px solid var(--border); border-radius: 12px 12px 0 0; }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #00c9b1, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #fff; }
+  .logo-text { font-size: 15px; font-weight: 500; color: var(--text); }
+  .logo-sub { font-size: 11px; color: var(--teal); letter-spacing: 0.05em; }
+  .status-row { display: flex; gap: 8px; align-items: center; }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.2)} }
+  .status-txt { font-size: 12px; color: var(--muted); }
+  .nav-tabs { display: flex; gap: 2px; padding: 8px 16px 0; background: rgba(0,0,0,0.15); border-bottom: 0.5px solid var(--border); }
+  .tab { padding: 8px 14px; font-size: 12px; color: var(--muted); cursor: pointer; border-radius: 6px 6px 0 0; border: none; background: transparent; transition: all 0.2s; }
+  .tab.active { color: var(--teal); background: rgba(0,201,177,0.1); border-bottom: 2px solid var(--teal); }
+  .tab:hover:not(.active) { color: var(--text); background: var(--card); }
+
+  .main { padding: 12px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 12px; }
+  .kpi { background: var(--card); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 14px; position: relative; overflow: hidden; transition: background 0.2s; }
+  .kpi:hover { background: var(--card-hover); }
+  .kpi-accent { position: absolute; top: 0; left: 0; width: 100%; height: 2px; }
+  .kpi-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .kpi-value { font-size: 22px; font-weight: 500; }
+  .kpi-delta { font-size: 11px; margin-top: 4px; }
+  .up { color: var(--green); } .down { color: var(--coral); } .warn { color: var(--amber); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .card { background: var(--card); border: 0.5px solid var(--border); border-radius: 10px; padding: 14px; }
+  .card-title { font-size: 12px; color: var(--muted); margin-bottom: 12px; font-weight: 500; letter-spacing: 0.03em; }
+  .full { grid-column: 1 / -1; }
+
+  .chart-wrap { position: relative; width: 100%; }
+  .mini-legend { display: flex; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+  .leg-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+  .leg-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  .network-map { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 4px; }
+  .node { background: var(--card); border: 0.5px solid var(--border); border-radius: 8px; padding: 8px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+  .node:hover { transform: translateY(-1px); border-color: var(--teal); }
+  .node-status { width: 6px; height: 6px; border-radius: 50%; margin: 0 auto 4px; }
+  .node-name { font-size: 10px; color: var(--muted); }
+  .node-load { font-size: 13px; font-weight: 500; }
+  .node-type { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+  .alert-list { display: flex; flex-direction: column; gap: 6px; }
+  .alert-item { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 8px; font-size: 12px; }
+  .alert-item.critical { background: rgba(255,107,107,0.12); border-left: 2px solid var(--coral); }
+  .alert-item.warn { background: rgba(245,166,35,0.12); border-left: 2px solid var(--amber); }
+  .alert-item.ok { background: rgba(34,197,94,0.12); border-left: 2px solid var(--green); }
+  .alert-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500; flex-shrink: 0; margin-top: 1px; }
+  .badge-crit { background: rgba(255,107,107,0.2); color: var(--coral); }
+  .badge-warn { background: rgba(245,166,35,0.2); color: var(--amber); }
+  .badge-ok { background: rgba(34,197,94,0.2); color: var(--green); }
+  .alert-text { color: var(--text); flex: 1; }
+  .alert-time { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+
+  .churn-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .churn-table th { color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 0.5px solid var(--border); text-align: left; }
+  .churn-table td { padding: 7px 8px; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
+  .risk-pill { padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 500; }
+  .risk-high { background: rgba(255,107,107,0.2); color: var(--coral); }
+  .risk-med { background: rgba(245,166,35,0.2); color: var(--amber); }
+  .risk-low { background: rgba(34,197,94,0.2); color: var(--green); }
+  .action-btn { background: rgba(0,201,177,0.15); color: var(--teal); border: none; border-radius: 6px; padding: 3px 8px; font-size: 10px; cursor: pointer; transition: background 0.2s; }
+  .action-btn:hover { background: rgba(0,201,177,0.3); }
+
+  .sentiment-bar { margin-bottom: 8px; }
+  .sent-label { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 11px; }
+  .sent-track { height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .sent-fill { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+  .rev-breakdown { display: flex; flex-direction: column; gap: 8px; }
+  .rev-row { display: flex; align-items: center; gap: 8px; }
+  .rev-name { font-size: 12px; color: var(--muted); width: 90px; flex-shrink: 0; }
+  .rev-track { flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; }
+  .rev-fill { height: 100%; border-radius: 4px; }
+  .rev-val { font-size: 12px; font-weight: 500; width: 50px; text-align: right; flex-shrink: 0; }
+
+  .ai-insights { display: flex; flex-direction: column; gap: 8px; }
+  .insight-card { background: rgba(139,92,246,0.1); border: 0.5px solid rgba(139,92,246,0.3); border-radius: 8px; padding: 10px 12px; }
+  .insight-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .insight-icon { font-size: 14px; }
+  .insight-title { font-size: 12px; font-weight: 500; color: var(--purple); }
+  .insight-body { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .insight-action { font-size: 11px; color: var(--teal); cursor: pointer; margin-top: 4px; display: inline-block; }
+  .insight-action:hover { text-decoration: underline; }
+
+  .spectrum-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .spec-band { background: var(--card); border: 0.5px solid var(--border); border-radius: 8px; padding: 10px 8px; text-align: center; }
+  .spec-band-name { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .spec-util { font-size: 16px; font-weight: 500; }
+  .spec-bar-wrap { height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .spec-bar-fill { height: 100%; border-radius: 2px; }
+  .spec-type { font-size: 9px; color: var(--muted); margin-top: 4px; }
+
+  .customer-profile { display: flex; flex-direction: column; gap: 10px; }
+  .profile-header { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 0.5px solid var(--border); }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; flex-shrink: 0; background: rgba(0,201,177,0.2); color: var(--teal); }
+  .profile-info .name { font-size: 14px; font-weight: 500; }
+  .profile-info .meta { font-size: 11px; color: var(--muted); }
+  .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ps-item { background: rgba(255,255,255,0.03); border-radius: 6px; padding: 8px; }
+  .ps-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+  .ps-val { font-size: 14px; font-weight: 500; }
+
+  .offer-list { display: flex; flex-direction: column; gap: 6px; }
+  .offer-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(0,201,177,0.07); border: 0.5px solid rgba(0,201,177,0.2); border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+  .offer-item:hover { background: rgba(0,201,177,0.15); }
+  .offer-icon { width: 28px; height: 28px; border-radius: 6px; background: rgba(0,201,177,0.2); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .offer-text { flex: 1; }
+  .offer-name { font-size: 12px; font-weight: 500; }
+  .offer-desc { font-size: 10px; color: var(--muted); }
+  .offer-score { font-size: 12px; font-weight: 500; color: var(--teal); }
+
+  .mini-toggle { display: flex; gap: 2px; background: rgba(255,255,255,0.05); border-radius: 6px; padding: 2px; margin-bottom: 10px; }
+  .mtog { font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer; border: none; background: transparent; color: var(--muted); transition: all 0.2s; }
+  .mtog.active { background: rgba(0,201,177,0.2); color: var(--teal); }
+
+  .nps-gauge { display: flex; flex-direction: column; align-items: center; padding: 8px 0; }
+  .nps-score { font-size: 36px; font-weight: 500; color: var(--teal); }
+  .nps-label { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+  .nps-dist { width: 100%; display: flex; gap: 4px; height: 20px; border-radius: 4px; overflow: hidden; }
+  .nps-seg { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; }
+</style>
+
+<div class="shell">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-dot">T</div>
+      <div>
+        <div class="logo-text">TelcoAI Intelligence</div>
+        <div class="logo-sub">NEXT-GEN NETWORK OPERATIONS PLATFORM</div>
+      </div>
+    </div>
+    <div class="status-row">
+      <div class="pulse"></div>
+      <span class="status-txt">Live · 2,847 active nodes · Last sync 3s ago</span>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="tab active" onclick="switchTab('network')">Network Intelligence</button>
+    <button class="tab" onclick="switchTab('customer')">Customer AI</button>
+    <button class="tab" onclick="switchTab('revenue')">Revenue Analytics</button>
+    <button class="tab" onclick="switchTab('cx')">CX & Sentiment</button>
+  </div>
+
+  <div class="main">
+
+    <!-- NETWORK INTELLIGENCE -->
+    <div id="tab-network" class="section active">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-accent" style="background: var(--teal);"></div>
+          <div class="kpi-label">Network Uptime</div>
+          <div class="kpi-value" style="color: var(--teal);">99.97%</div>
+          <div class="kpi-delta up">▲ 0.04% vs last week</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background: var(--blue);"></div>
+          <div class="kpi-label">Avg Latency</div>
+          <div class="kpi-value" style="color: var(--blue);">12ms</div>
+          <div class="kpi-delta up">▼ 3ms improvement</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background: var(--amber);"></div>
+          <div class="kpi-label">Active Alerts</div>
+          <div class="kpi-value" style="color: var(--amber);">7</div>
+          <div class="kpi-delta warn">2 critical · 5 warning</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background: var(--purple);"></div>
+          <div class="kpi-label">AI Predictions</div>
+          <div class="kpi-value" style="color: var(--purple);">94.2%</div>
+          <div class="kpi-delta up">Model accuracy score</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">TRAFFIC VOLUME — 24H REAL-TIME</div>
+          <div class="mini-legend">
+            <span class="leg-item"><span class="leg-dot" style="background:#00c9b1;"></span>5G Traffic</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#3b82f6;"></span>4G/LTE</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#8b5cf6;"></span>Fixed Line</span>
+          </div>
+          <div class="chart-wrap" style="height:160px;">
+            <canvas id="trafficChart" role="img" aria-label="Line chart showing 24-hour network traffic volumes for 5G, 4G LTE, and fixed line services">24h traffic data for 5G, 4G, and fixed line.</canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">AI-PREDICTED CONGESTION RISK</div>
+          <div class="mini-legend">
+            <span class="leg-item"><span class="leg-dot" style="background:#ff6b6b;"></span>High Risk</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#f5a623;"></span>Medium</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#22c55e;"></span>Low</span>
+          </div>
+          <div class="chart-wrap" style="height:160px;">
+            <canvas id="congestionChart" role="img" aria-label="Bar chart showing AI predicted congestion risk levels across different city zones">Congestion risk by zone for the next 6 hours.</canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-title">LIVE NETWORK NODE STATUS — CLICK TO DRILL DOWN</div>
+        <div class="network-map">
+          <div class="node" onclick="sendPrompt('Show detailed analytics for Lagos Core Node 5G including packet loss, jitter, and throughput metrics')">
+            <div class="node-status" style="background:var(--green);"></div>
+            <div class="node-load" style="color:var(--green);">68%</div>
+            <div class="node-name">Lagos Core</div>
+            <div class="node-type">5G · Edge</div>
+          </div>
+          <div class="node" onclick="sendPrompt('Analyze Abuja Gateway node — why is it running at 91% capacity and what should we do?')">
+            <div class="node-status" style="background:var(--amber);"></div>
+            <div class="node-load" style="color:var(--amber);">91%</div>
+            <div class="node-name">Abuja GW</div>
+            <div class="node-type">4G · Gateway</div>
+          </div>
+          <div class="node" onclick="sendPrompt('Kano transmission node is offline — give me root cause analysis and recovery steps')">
+            <div class="node-status" style="background:var(--coral);"></div>
+            <div class="node-load" style="color:var(--coral);">Offline</div>
+            <div class="node-name">Kano TX</div>
+            <div class="node-type">Transmission</div>
+          </div>
+          <div class="node" onclick="sendPrompt('Port Harcourt backbone node performance deep dive')">
+            <div class="node-status" style="background:var(--green);"></div>
+            <div class="node-load" style="color:var(--green);">44%</div>
+            <div class="node-name">PH Backbone</div>
+            <div class="node-type">5G · Core</div>
+          </div>
+          <div class="node" onclick="sendPrompt('Ibadan edge node capacity planning for next quarter')">
+            <div class="node-status" style="background:var(--green);"></div>
+            <div class="node-load" style="color:var(--green);">57%</div>
+            <div class="node-name">Ibadan Edge</div>
+            <div class="node-type">5G · Edge</div>
+          </div>
+          <div class="node" onclick="sendPrompt('Enugu regional node — traffic routing optimization recommendations')">
+            <div class="node-status" style="background:var(--amber);"></div>
+            <div class="node-load" style="color:var(--amber);">83%</div>
+            <div class="node-name">Enugu Reg</div>
+            <div class="node-type">4G · Regional</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">REAL-TIME ALERTS — ML ANOMALY DETECTION</div>
+          <div class="alert-list">
+            <div class="alert-item critical">
+              <span class="alert-badge badge-crit">CRITICAL</span>
+              <span class="alert-text">Kano TX node offline — 14,200 subscribers affected. Auto-rerouting active.</span>
+              <span class="alert-time">2m ago</span>
+            </div>
+            <div class="alert-item warn">
+              <span class="alert-badge badge-warn">WARN</span>
+              <span class="alert-text">Abuja Gateway at 91% capacity — predicted saturation in 47 mins.</span>
+              <span class="alert-time">8m ago</span>
+            </div>
+            <div class="alert-item warn">
+              <span class="alert-badge badge-warn">WARN</span>
+              <span class="alert-text">Enugu node latency spike: 38ms avg (+217%). ML flagged unusual pattern.</span>
+              <span class="alert-time">15m ago</span>
+            </div>
+            <div class="alert-item ok">
+              <span class="alert-badge badge-ok">RESOLVED</span>
+              <span class="alert-text">Lagos Core packet loss resolved — self-healing applied by NetAI agent.</span>
+              <span class="alert-time">31m ago</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">SPECTRUM UTILISATION BY BAND</div>
+          <div class="spectrum-grid">
+            <div class="spec-band">
+              <div class="spec-band-name">700 MHz</div>
+              <div class="spec-util" style="color:var(--green);">62%</div>
+              <div class="spec-bar-wrap"><div class="spec-bar-fill" style="width:62%;background:var(--green);"></div></div>
+              <div class="spec-type">Rural 4G</div>
+            </div>
+            <div class="spec-band">
+              <div class="spec-band-name">1800 MHz</div>
+              <div class="spec-util" style="color:var(--teal);">78%</div>
+              <div class="spec-bar-wrap"><div class="spec-bar-fill" style="width:78%;background:var(--teal);"></div></div>
+              <div class="spec-type">Urban LTE</div>
+            </div>
+            <div class="spec-band">
+              <div class="spec-band-name">2.6 GHz</div>
+              <div class="spec-util" style="color:var(--amber);">89%</div>
+              <div class="spec-bar-wrap"><div class="spec-bar-fill" style="width:89%;background:var(--amber);"></div></div>
+              <div class="spec-type">5G Sub-6</div>
+            </div>
+            <div class="spec-band">
+              <div class="spec-band-name">3.5 GHz</div>
+              <div class="spec-util" style="color:var(--blue);">54%</div>
+              <div class="spec-bar-wrap"><div class="spec-bar-fill" style="width:54%;background:var(--blue);"></div></div>
+              <div class="spec-type">5G NR</div>
+            </div>
+            <div class="spec-band">
+              <div class="spec-band-name">mmWave</div>
+              <div class="spec-util" style="color:var(--purple);">23%</div>
+              <div class="spec-bar-wrap"><div class="spec-bar-fill" style="width:23%;background:var(--purple);"></div></div>
+              <div class="spec-type">5G Dense</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMER AI -->
+    <div id="tab-customer" class="section">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--coral);"></div>
+          <div class="kpi-label">Churn Risk (30d)</div>
+          <div class="kpi-value" style="color:var(--coral);">8.3%</div>
+          <div class="kpi-delta down">▲ 1.2% MoM increase</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--teal);"></div>
+          <div class="kpi-label">Retention Actions</div>
+          <div class="kpi-value" style="color:var(--teal);">1,847</div>
+          <div class="kpi-delta up">▲ 340 auto-triggered</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--green);"></div>
+          <div class="kpi-label">AI Upsell Rate</div>
+          <div class="kpi-value" style="color:var(--green);">23.7%</div>
+          <div class="kpi-delta up">▲ 5.4% vs control</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--purple);"></div>
+          <div class="kpi-label">CLV (Avg)</div>
+          <div class="kpi-value" style="color:var(--purple);">₦84K</div>
+          <div class="kpi-delta up">▲ ₦9K this quarter</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">ML CHURN PREDICTION — HIGH RISK ACCOUNTS</div>
+          <table class="churn-table">
+            <thead>
+              <tr><th>Subscriber</th><th>Plan</th><th>Risk Score</th><th>Key Signal</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:500;">Ngozi A.</td>
+                <td style="color:var(--muted);">5G Pro</td>
+                <td><span class="risk-pill risk-high">94% High</span></td>
+                <td style="color:var(--muted);font-size:11px;">3 support calls</td>
+                <td><button class="action-btn" onclick="sendPrompt('Generate personalised retention offer for a 5G Pro subscriber with 94% churn risk who made 3 support calls this month')">Offer ↗</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Emeka B.</td>
+                <td style="color:var(--muted);">4G Max</td>
+                <td><span class="risk-pill risk-high">87% High</span></td>
+                <td style="color:var(--muted);font-size:11px;">Usage dropped 60%</td>
+                <td><button class="action-btn" onclick="sendPrompt('Design a win-back campaign for customer with 87% churn risk and 60% usage drop')">Offer ↗</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Aisha K.</td>
+                <td style="color:var(--muted);">Home Fibre</td>
+                <td><span class="risk-pill risk-med">61% Med</span></td>
+                <td style="color:var(--muted);font-size:11px;">Competitor inquiry</td>
+                <td><button class="action-btn" onclick="sendPrompt('Create competitive counter-offer for a Home Fibre customer at 61% churn risk who has made competitor inquiries')">Offer ↗</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Bola T.</td>
+                <td style="color:var(--muted);">Business</td>
+                <td><span class="risk-pill risk-med">48% Med</span></td>
+                <td style="color:var(--muted);font-size:11px;">Billing complaint</td>
+                <td><button class="action-btn" onclick="sendPrompt('Suggest resolution and upsell strategy for business customer with billing complaint at 48% churn risk')">Offer ↗</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:500;">Chidi M.</td>
+                <td style="color:var(--muted);">5G Basic</td>
+                <td><span class="risk-pill risk-low">22% Low</span></td>
+                <td style="color:var(--muted);font-size:11px;">Plan expiring soon</td>
+                <td><button class="action-btn" onclick="sendPrompt('Generate renewal nudge with upgrade offer for 5G Basic customer whose plan expires soon')">Offer ↗</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title">SELECTED SUBSCRIBER PROFILE — AI INSIGHTS</div>
+          <div class="customer-profile">
+            <div class="profile-header">
+              <div class="avatar">NA</div>
+              <div class="profile-info">
+                <div class="name">Ngozi Adeyemi</div>
+                <div class="meta">ID: SUB-004821 · 5G Pro · ₦12,000/mo · 3yr tenure</div>
+              </div>
+            </div>
+            <div class="profile-stats">
+              <div class="ps-item"><div class="ps-label">Avg Monthly Data</div><div class="ps-val" style="color:var(--teal);">87 GB</div></div>
+              <div class="ps-item"><div class="ps-label">Support Tickets</div><div class="ps-val" style="color:var(--coral);">3 this month</div></div>
+              <div class="ps-item"><div class="ps-label">Last Payment</div><div class="ps-val" style="color:var(--green);">On-time</div></div>
+              <div class="ps-item"><div class="ps-label">NPS Score</div><div class="ps-val" style="color:var(--amber);">5/10</div></div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">PERSONALISED AI OFFERS</div>
+            <div class="offer-list">
+              <div class="offer-item" onclick="sendPrompt('Show me a draft SMS and email for the 5G Pro loyalty upgrade offer for Ngozi Adeyemi')">
+                <div class="offer-icon">★</div>
+                <div class="offer-text">
+                  <div class="offer-name">Loyalty Upgrade — 5G Pro Max</div>
+                  <div class="offer-desc">2 months free + double data · Predicted accept</div>
+                </div>
+                <div class="offer-score">91%</div>
+              </div>
+              <div class="offer-item" onclick="sendPrompt('Draft outreach for the dedicated support SLA offer for Ngozi Adeyemi')">
+                <div class="offer-icon">✓</div>
+                <div class="offer-text">
+                  <div class="offer-name">Dedicated Support SLA</div>
+                  <div class="offer-desc">Priority queue + account manager</div>
+                </div>
+                <div class="offer-score">76%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">CHURN RISK DISTRIBUTION — 30-DAY FORECAST (ML MODEL v3.2)</div>
+        <div class="mini-legend">
+          <span class="leg-item"><span class="leg-dot" style="background:#ff6b6b;"></span>High Risk (&gt;70%)</span>
+          <span class="leg-item"><span class="leg-dot" style="background:#f5a623;"></span>Medium Risk (40–70%)</span>
+          <span class="leg-item"><span class="leg-dot" style="background:#22c55e;"></span>Low Risk (&lt;40%)</span>
+        </div>
+        <div class="chart-wrap" style="height:140px;">
+          <canvas id="churnChart" role="img" aria-label="Stacked bar chart showing churn risk distribution across subscriber segments over a 30-day forecast period">Churn risk forecast by segment.</canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVENUE ANALYTICS -->
+    <div id="tab-revenue" class="section">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--teal);"></div>
+          <div class="kpi-label">Monthly Revenue</div>
+          <div class="kpi-value" style="color:var(--teal);">₦4.2B</div>
+          <div class="kpi-delta up">▲ 12.4% YoY</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--green);"></div>
+          <div class="kpi-label">ARPU</div>
+          <div class="kpi-value" style="color:var(--green);">₦3,840</div>
+          <div class="kpi-delta up">▲ ₦420 vs last quarter</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--blue);"></div>
+          <div class="kpi-label">Data Revenue</div>
+          <div class="kpi-value" style="color:var(--blue);">68%</div>
+          <div class="kpi-delta up">▲ 8% of revenue mix</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--purple);"></div>
+          <div class="kpi-label">AI-Driven Revenue</div>
+          <div class="kpi-value" style="color:var(--purple);">₦340M</div>
+          <div class="kpi-delta up">↑ Upsell + retention saves</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">REVENUE TREND — 12 MONTHS</div>
+          <div class="mini-legend">
+            <span class="leg-item"><span class="leg-dot" style="background:#00c9b1;"></span>Actual</span>
+            <span class="leg-item"><span class="leg-dot" style="background:#8b5cf6; opacity:0.6;"></span>AI Forecast</span>
+          </div>
+          <div class="chart-wrap" style="height:160px;">
+            <canvas id="revenueChart" role="img" aria-label="Line chart comparing actual monthly revenue with AI forecasted revenue over 12 months">12-month revenue trend vs AI forecast.</canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">REVENUE BREAKDOWN BY SEGMENT</div>
+          <div class="rev-breakdown" style="margin-top:8px;">
+            <div class="rev-row">
+              <div class="rev-name">5G Services</div>
+              <div class="rev-track"><div class="rev-fill" style="width:68%;background:var(--teal);"></div></div>
+              <div class="rev-val" style="color:var(--teal);">₦2.86B</div>
+            </div>
+            <div class="rev-row">
+              <div class="rev-name">4G/LTE</div>
+              <div class="rev-track"><div class="rev-fill" style="width:42%;background:var(--blue);"></div></div>
+              <div class="rev-val" style="color:var(--blue);">₦1.76B</div>
+            </div>
+            <div class="rev-row">
+              <div class="rev-name">Fixed Fibre</div>
+              <div class="rev-track"><div class="rev-fill" style="width:31%;background:var(--purple);"></div></div>
+              <div class="rev-val" style="color:var(--purple);">₦1.30B</div>
+            </div>
+            <div class="rev-row">
+              <div class="rev-name">Enterprise</div>
+              <div class="rev-track"><div class="rev-fill" style="width:25%;background:var(--amber);"></div></div>
+              <div class="rev-val" style="color:var(--amber);">₦1.05B</div>
+            </div>
+            <div class="rev-row">
+              <div class="rev-name">IoT/M2M</div>
+              <div class="rev-track"><div class="rev-fill" style="width:14%;background:var(--green);"></div></div>
+              <div class="rev-val" style="color:var(--green);">₦590M</div>
+            </div>
+            <div class="rev-row">
+              <div class="rev-name">Voice/SMS</div>
+              <div class="rev-track"><div class="rev-fill" style="width:8%;background:var(--muted);"></div></div>
+              <div class="rev-val" style="color:var(--muted);">₦336M</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">ARPU TREND BY TIER</div>
+          <div class="chart-wrap" style="height:150px;">
+            <canvas id="arpuChart" role="img" aria-label="Multi-line chart showing ARPU trends for 5G premium, 4G standard, and basic tier subscribers over 6 months">ARPU trend by subscriber tier.</canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">AI-GENERATED REVENUE INSIGHTS</div>
+          <div class="ai-insights">
+            <div class="insight-card">
+              <div class="insight-header">
+                <span class="insight-icon">◆</span>
+                <span class="insight-title">Upsell Opportunity — ₦180M Addressable</span>
+              </div>
+              <div class="insight-body">2,340 4G subscribers are using &gt;80GB/month — prime 5G upgrade candidates. ML confidence: 88%.</div>
+              <span class="insight-action" onclick="sendPrompt('Build a targeted 5G upgrade campaign for 2340 high-data 4G subscribers — include messaging, offer structure, and expected revenue impact')">Design campaign ↗</span>
+            </div>
+            <div class="insight-card">
+              <div class="insight-header">
+                <span class="insight-icon">◆</span>
+                <span class="insight-title">Enterprise IoT Expansion — ₦95M Pipeline</span>
+              </div>
+              <div class="insight-body">12 enterprise accounts show IoT readiness signals. Predictive model identifies high conversion probability this quarter.</div>
+              <span class="insight-action" onclick="sendPrompt('Create an enterprise IoT pitch deck outline for the 12 high-readiness accounts with pricing and use case recommendations')">View pipeline ↗</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CX & SENTIMENT -->
+    <div id="tab-cx" class="section">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--teal);"></div>
+          <div class="kpi-label">NPS Score</div>
+          <div class="kpi-value" style="color:var(--teal);">+47</div>
+          <div class="kpi-delta up">▲ 6 points this month</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--green);"></div>
+          <div class="kpi-label">FCR Rate</div>
+          <div class="kpi-value" style="color:var(--green);">84%</div>
+          <div class="kpi-delta up">▲ 7% after AI chatbot</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--blue);"></div>
+          <div class="kpi-label">Avg Handle Time</div>
+          <div class="kpi-value" style="color:var(--blue);">3.2m</div>
+          <div class="kpi-delta up">▼ 1.8m with AI assist</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-accent" style="background:var(--purple);"></div>
+          <div class="kpi-label">CSAT Score</div>
+          <div class="kpi-value" style="color:var(--purple);">4.3/5</div>
+          <div class="kpi-delta up">▲ 0.4 since Q1</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">REAL-TIME SENTIMENT ANALYSIS — NLP ENGINE</div>
+          <div style="margin-bottom:12px;">
+            <div class="sentiment-bar">
+              <div class="sent-label"><span style="color:var(--green);">Positive</span><span style="font-weight:500;">54%</span></div>
+              <div class="sent-track"><div class="sent-fill" style="width:54%;background:var(--green);"></div></div>
+            </div>
+            <div class="sentiment-bar">
+              <div class="sent-label"><span style="color:var(--muted);">Neutral</span><span style="font-weight:500;">28%</span></div>
+              <div class="sent-track"><div class="sent-fill" style="width:28%;background:var(--muted);"></div></div>
+            </div>
+            <div class="sentiment-bar">
+              <div class="sent-label"><span style="color:var(--coral);">Negative</span><span style="font-weight:500;">18%</span></div>
+              <div class="sent-track"><div class="sent-fill" style="width:18%;background:var(--coral);"></div></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">TOP NEGATIVE THEMES — NLP EXTRACTED</div>
+          <div class="alert-list">
+            <div class="alert-item warn">
+              <span class="alert-badge badge-warn">TOP</span>
+              <span class="alert-text">Network speed complaints (42% of negative) — mainly Kano, Enugu regions</span>
+              <span class="alert-time">Live</span>
+            </div>
+            <div class="alert-item warn">
+              <span class="alert-badge badge-warn">#2</span>
+              <span class="alert-text">Billing queries (31%) — data bundle expiry confusion is primary driver</span>
+              <span class="alert-time">Live</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">NPS DISTRIBUTION — 4,280 RESPONSES THIS MONTH</div>
+          <div class="nps-gauge">
+            <div class="nps-score">+47</div>
+            <div class="nps-label">Net Promoter Score · Industry avg: +31</div>
+            <div class="nps-dist">
+              <div class="nps-seg" style="width:18%;background:rgba(255,107,107,0.7);color:#fff;border-radius:4px 0 0 4px;">18%</div>
+              <div class="nps-seg" style="width:28%;background:rgba(245,166,35,0.7);color:#fff;">28%</div>
+              <div class="nps-seg" style="width:54%;background:rgba(34,197,94,0.7);color:#fff;border-radius:0 4px 4px 0;">54%</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;width:100%;font-size:10px;color:var(--muted);margin-top:4px;">
+              <span>Detractors (0–6)</span><span>Passives (7–8)</span><span>Promoters (9–10)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">CX METRICS TREND — 6 MONTHS</div>
+          <div class="chart-wrap" style="height:150px;">
+            <canvas id="cxChart" role="img" aria-label="Multi-line chart tracking NPS, CSAT, and FCR rate over 6 months">CX metric trends over 6 months.</canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">AI CHATBOT PERFORMANCE — THIS WEEK</div>
+          <div class="chart-wrap" style="height:150px;">
+            <canvas id="chatbotChart" role="img" aria-label="Bar chart comparing AI chatbot resolved vs escalated interactions by day of week">Chatbot resolution vs escalation by day.</canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+const gridColor = 'rgba(255,255,255,0.06)';
+const tickColor = '#64748b';
+
+const hours = ['00','02','04','06','08','10','12','14','16','18','20','22','24'];
+
+new Chart(document.getElementById('trafficChart'), {
+  type: 'line',
+  data: {
+    labels: hours,
+    datasets: [
+      { label: '5G', data: [12,10,9,11,18,32,48,52,55,58,54,46,42], borderColor: '#00c9b1', backgroundColor: 'rgba(0,201,177,0.08)', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 0 },
+      { label: '4G', data: [22,18,16,19,28,38,42,44,46,44,40,36,30], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.06)', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 0 },
+      { label: 'Fixed', data: [15,14,13,14,16,20,22,23,24,23,22,20,18], borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.05)', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 0 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 }, callback: v => v + 'Gbps' } } } }
+});
+
+const zones = ['VI', 'Ikeja', 'Lekki', 'Surulere', 'Ikorodu', 'Oshodi'];
+new Chart(document.getElementById('congestionChart'), {
+  type: 'bar',
+  data: {
+    labels: zones,
+    datasets: [{ label: 'Risk %', data: [82, 91, 67, 44, 38, 71], backgroundColor: ['#ff6b6b','#ff6b6b','#f5a623','#22c55e','#22c55e','#f5a623'], borderRadius: 4 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 }, callback: v => v + '%' }, max: 100 } } }
+});
+
+const segs = ['Consumer', 'Business', 'Enterprise', 'Youth', 'Rural'];
+new Chart(document.getElementById('churnChart'), {
+  type: 'bar',
+  data: {
+    labels: segs,
+    datasets: [
+      { label: 'High Risk', data: [8,4,2,11,6], backgroundColor: 'rgba(255,107,107,0.8)', borderRadius: 4 },
+      { label: 'Medium', data: [18,12,8,20,14], backgroundColor: 'rgba(245,166,35,0.7)', borderRadius: 4 },
+      { label: 'Low', data: [74,84,90,69,80], backgroundColor: 'rgba(34,197,94,0.6)', borderRadius: 4 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { color: tickColor, font: { size: 10 } } }, y: { stacked: true, grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 }, callback: v => v + '%' } } } }
+});
+
+const months = ['May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'];
+new Chart(document.getElementById('revenueChart'), {
+  type: 'line',
+  data: {
+    labels: months,
+    datasets: [
+      { label: 'Actual', data: [3.4,3.5,3.6,3.7,3.8,3.8,3.9,4.0,4.0,4.1,4.2,4.2], borderColor: '#00c9b1', backgroundColor: 'rgba(0,201,177,0.1)', tension: 0.4, fill: true, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#00c9b1' },
+      { label: 'Forecast', data: [null,null,null,null,null,null,null,null,null,null,4.2,4.4], borderColor: '#8b5cf6', borderDash: [5,4], tension: 0.4, borderWidth: 2, pointRadius: 0 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 }, callback: v => '₦' + v + 'B' }, min: 3 } } }
+});
+
+new Chart(document.getElementById('arpuChart'), {
+  type: 'line',
+  data: {
+    labels: ['Nov','Dec','Jan','Feb','Mar','Apr'],
+    datasets: [
+      { label: '5G Premium', data: [6200,6400,6600,6800,7000,7200], borderColor: '#00c9b1', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#00c9b1' },
+      { label: '4G Standard', data: [3800,3850,3900,3920,3960,3840], borderColor: '#3b82f6', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#3b82f6' },
+      { label: 'Basic', data: [1200,1220,1240,1280,1300,1290], borderColor: '#8b5cf6', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#8b5cf6' }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 }, callback: v => '₦' + (v/1000).toFixed(1) + 'K' } } } }
+});
+
+new Chart(document.getElementById('cxChart'), {
+  type: 'line',
+  data: {
+    labels: ['Nov','Dec','Jan','Feb','Mar','Apr'],
+    datasets: [
+      { label: 'NPS', data: [36,38,39,42,44,47], borderColor: '#00c9b1', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#00c9b1', yAxisID: 'y' },
+      { label: 'CSAT ×10', data: [36,37,38,40,42,43], borderColor: '#f5a623', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#f5a623', yAxisID: 'y' },
+      { label: 'FCR %', data: [70,72,74,78,82,84], borderColor: '#22c55e', tension: 0.4, borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#22c55e', yAxisID: 'y' }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } } } }
+});
+
+const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+new Chart(document.getElementById('chatbotChart'), {
+  type: 'bar',
+  data: {
+    labels: days,
+    datasets: [
+      { label: 'AI Resolved', data: [1240,1380,1290,1420,1560,980,820], backgroundColor: 'rgba(0,201,177,0.7)', borderRadius: 4 },
+      { label: 'Escalated', data: [180,210,160,200,240,140,110], backgroundColor: 'rgba(255,107,107,0.6)', borderRadius: 4 }
+    ]
+  },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 10 } } }, y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 10 } } } } }
+});
+</script>
