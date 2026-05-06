@@ -1,0 +1,748 @@
+
+<h2 class="sr-only">TelcoAI Intelligence Dashboard — churn prediction, network health, customer segmentation, and multilingual sentiment analysis for Nigerian telecom operators</h2>
+
+<style>
+:root {
+  --navy: #0B1929;
+  --teal-a: #0F7B6C;
+  --teal-b: #13A38F;
+  --amber-a: #C87A00;
+  --red-a: #C13535;
+  --green-a: #3A7D1E;
+  --border: 0.5px solid var(--color-border-tertiary);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.shell { padding: 0 0 2rem; }
+
+/* top bar */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--color-background-secondary);
+  border-bottom: var(--border);
+  margin-bottom: 0;
+}
+.topbar-brand { display: flex; align-items: center; gap: 10px; }
+.brand-dot {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--teal-b);
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 14px; font-weight: 500;
+}
+.brand-name { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+.brand-sub { font-size: 11px; color: var(--color-text-secondary); }
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+  display: inline-block; margin-right: 6px; animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.topbar-meta { font-size: 12px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 16px; }
+
+/* tabs */
+.tabs {
+  display: flex; gap: 2px; padding: 0 20px;
+  background: var(--color-background-secondary);
+  border-bottom: var(--border);
+}
+.tab {
+  padding: 10px 16px; font-size: 13px; color: var(--color-text-secondary);
+  cursor: pointer; border: none; background: transparent;
+  border-bottom: 2px solid transparent; transition: all 0.2s;
+}
+.tab.active { color: var(--teal-b); border-bottom-color: var(--teal-b); }
+.tab:hover:not(.active) { color: var(--color-text-primary); background: var(--color-background-secondary); }
+
+.section { display: none; padding: 16px 20px; }
+.section.active { display: block; }
+
+/* kpi grid */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.kpi {
+  background: var(--color-background-secondary);
+  border-radius: var(--border-radius-md);
+  padding: 14px 16px; position: relative; overflow: hidden;
+}
+.kpi-accent { position: absolute; top: 0; left: 0; width: 100%; height: 2px; }
+.kpi-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 6px; }
+.kpi-val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.kpi-delta { font-size: 11px; margin-top: 4px; }
+.up { color: #22c55e; } .dn { color: #ef4444; } .warn { color: #f59e0b; }
+
+/* two-col / three-col */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.card {
+  background: var(--color-background-primary);
+  border: var(--border); border-radius: var(--border-radius-lg);
+  padding: 14px 16px;
+}
+.card-title { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 12px; font-weight: 500; letter-spacing: 0.03em; }
+
+/* charts */
+.chart-wrap { position: relative; width: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; font-size: 11px; color: var(--color-text-secondary); }
+.leg { display: flex; align-items: center; gap: 4px; }
+.leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+/* risk table */
+.rtable { width: 100%; border-collapse: collapse; font-size: 12px; }
+.rtable th { color: var(--color-text-secondary); font-weight: 500; padding: 6px 8px; border-bottom: var(--border); text-align: left; }
+.rtable td { padding: 7px 8px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.pill { padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 500; display: inline-block; }
+.pill-high { background: #fef2f2; color: #991b1b; }
+.pill-med { background: #fffbeb; color: #92400e; }
+.pill-low { background: #f0fdf4; color: #166534; }
+.act-btn {
+  background: var(--color-background-secondary); color: var(--color-text-secondary);
+  border: var(--border); border-radius: var(--border-radius-md);
+  padding: 3px 8px; font-size: 10px; cursor: pointer;
+  transition: background 0.15s;
+}
+.act-btn:hover { background: var(--color-background-tertiary); }
+
+/* alert list */
+.alert-list { display: flex; flex-direction: column; gap: 6px; }
+.alert-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 9px 11px; border-radius: var(--border-radius-md);
+  font-size: 12px;
+}
+.alert-crit { background: #fef2f2; border-left: 2px solid #ef4444; }
+.alert-warn { background: #fffbeb; border-left: 2px solid #f59e0b; }
+.alert-ok   { background: #f0fdf4; border-left: 2px solid #22c55e; }
+.abadge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 500; flex-shrink: 0; margin-top: 1px; }
+.ab-crit { background: #fee2e2; color: #991b1b; }
+.ab-warn { background: #fef3c7; color: #92400e; }
+.ab-ok   { background: #dcfce7; color: #166534; }
+.atext { flex: 1; color: var(--color-text-primary); }
+.atime { font-size: 10px; color: var(--color-text-secondary); flex-shrink: 0; }
+
+/* sentiment bars */
+.sbar { margin-bottom: 9px; }
+.sbar-label { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 12px; }
+.sbar-track { height: 6px; background: var(--color-background-tertiary); border-radius: 3px; overflow: hidden; }
+.sbar-fill { height: 100%; border-radius: 3px; }
+
+/* node grid */
+.node-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+.node {
+  background: var(--color-background-secondary);
+  border: var(--border); border-radius: var(--border-radius-md);
+  padding: 9px 6px; text-align: center; cursor: pointer; transition: border-color 0.15s;
+}
+.node:hover { border-color: var(--teal-b); }
+.nd-dot { width: 7px; height: 7px; border-radius: 50%; margin: 0 auto 5px; }
+.nd-load { font-size: 13px; font-weight: 500; }
+.nd-name { font-size: 10px; color: var(--color-text-secondary); margin-top: 2px; }
+.nd-type { font-size: 9px; color: var(--color-text-secondary); margin-top: 1px; }
+
+/* progress bars */
+.prog-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.prog-label { font-size: 12px; color: var(--color-text-secondary); width: 120px; flex-shrink: 0; }
+.prog-track { flex: 1; height: 8px; background: var(--color-background-tertiary); border-radius: 4px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 4px; }
+.prog-val { font-size: 12px; font-weight: 500; color: var(--color-text-primary); width: 36px; text-align: right; flex-shrink: 0; }
+
+/* offer cards */
+.offer-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--color-background-secondary);
+  border: var(--border); border-radius: var(--border-radius-md);
+  cursor: pointer; margin-bottom: 7px; transition: border-color 0.15s;
+}
+.offer-card:hover { border-color: var(--teal-b); }
+.offer-icon {
+  width: 30px; height: 30px; border-radius: 6px;
+  background: var(--color-background-info); display: flex;
+  align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+}
+.offer-name { font-size: 12px; font-weight: 500; color: var(--color-text-primary); }
+.offer-desc { font-size: 10px; color: var(--color-text-secondary); }
+.offer-pct { font-size: 12px; font-weight: 500; color: var(--teal-b); }
+
+/* insight cards */
+.insight-card {
+  background: var(--color-background-secondary);
+  border-left: 2px solid var(--teal-b);
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px; margin-bottom: 8px;
+}
+.insight-title { font-size: 12px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 3px; }
+.insight-body { font-size: 11px; color: var(--color-text-secondary); line-height: 1.5; }
+.insight-cta { font-size: 11px; color: var(--teal-b); cursor: pointer; margin-top: 4px; display: inline-block; }
+.insight-cta:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .node-grid { grid-template-columns: repeat(3,1fr); }
+}
+</style>
+
+<div class="shell">
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-dot"><i class="ti ti-broadcast" aria-hidden="true"></i></div>
+    <div>
+      <div class="brand-name">NaijaNetAI Intelligence</div>
+      <div class="brand-sub">Telco Operations &amp; Customer Analytics Platform</div>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <span><span class="live-dot"></span>Live · 95.7M subscribers</span>
+    <span>MTN Nigeria · 51.62% market share</span>
+    <span>Last sync: 4s ago</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('churn', this)">Churn Intelligence</button>
+  <button class="tab" onclick="switchTab('network', this)">Network Health</button>
+  <button class="tab" onclick="switchTab('sentiment', this)">Multilingual Sentiment</button>
+  <button class="tab" onclick="switchTab('revenue', this)">Revenue Analytics</button>
+</div>
+
+<!-- ─── CHURN INTELLIGENCE ─── -->
+<div id="sec-churn" class="section active">
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#ef4444;"></div>
+      <div class="kpi-label">OVERALL CHURN RATE</div>
+      <div class="kpi-val" style="color:#c13535;">26.5%</div>
+      <div class="kpi-delta dn">▲ 2.1% vs last quarter</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#f59e0b;"></div>
+      <div class="kpi-label">HIGH RISK SUBSCRIBERS</div>
+      <div class="kpi-val" style="color:#c87a00;">1,651</div>
+      <div class="kpi-delta warn">Churn probability &gt;60%</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#0f7b6c;"></div>
+      <div class="kpi-label">ML MODEL ACCURACY</div>
+      <div class="kpi-val" style="color:#0f7b6c;">79.8%</div>
+      <div class="kpi-delta up">Random Forest · 7,043 records</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#c13535;"></div>
+      <div class="kpi-label">MONTHLY REVENUE AT RISK</div>
+      <div class="kpi-val" style="color:#c13535;">₦222M</div>
+      <div class="kpi-delta dn">1,869 churners × ₦74.4k avg</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">CHURN RATE BY CONTRACT TYPE</div>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq" style="background:#ef4444;"></span>Month-to-month 42.7%</span>
+        <span class="leg"><span class="leg-sq" style="background:#f59e0b;"></span>One year 11.3%</span>
+        <span class="leg"><span class="leg-sq" style="background:#22c55e;"></span>Two year 2.8%</span>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="contractChart" role="img" aria-label="Bar chart showing churn rate by contract: month-to-month 42.7%, one year 11.3%, two year 2.8%">Churn rates: Month-to-month 42.7%, One year 11.3%, Two year 2.8%.</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">CHURN BY TENURE SEGMENT</div>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq" style="background:#ef4444;"></span>0–12 months (highest risk)</span>
+        <span class="leg"><span class="leg-sq" style="background:#22c55e;"></span>49–72 months (loyal)</span>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="tenureChart" role="img" aria-label="Bar chart of churn rate by tenure: 0-12 months 47.4%, 13-24 months 28.7%, 25-48 months 20.4%, 49-72 months 9.5%">Churn by tenure: 0-12m 47.4%, 13-24m 28.7%, 25-48m 20.4%, 49-72m 9.5%.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">ML FEATURE IMPORTANCE — KEY CHURN DRIVERS</div>
+      <div style="margin-top:6px;">
+        <div class="prog-row"><div class="prog-label">Total Charges</div><div class="prog-track"><div class="prog-fill" style="width:100%;background:#0f7b6c;"></div></div><div class="prog-val">19.3%</div></div>
+        <div class="prog-row"><div class="prog-label">Monthly Charges</div><div class="prog-track"><div class="prog-fill" style="width:93%;background:#13a38f;"></div></div><div class="prog-val">17.9%</div></div>
+        <div class="prog-row"><div class="prog-label">Tenure</div><div class="prog-track"><div class="prog-fill" style="width:84%;background:#1cc9b0;"></div></div><div class="prog-val">16.2%</div></div>
+        <div class="prog-row"><div class="prog-label">Contract Type</div><div class="prog-track"><div class="prog-fill" style="width:39%;background:#f59e0b;"></div></div><div class="prog-val">7.6%</div></div>
+        <div class="prog-row"><div class="prog-label">Payment Method</div><div class="prog-track"><div class="prog-fill" style="width:27%;background:#f59e0b;"></div></div><div class="prog-val">5.1%</div></div>
+        <div class="prog-row"><div class="prog-label">Online Security</div><div class="prog-track"><div class="prog-fill" style="width:22%;background:#ef4444;"></div></div><div class="prog-val">4.2%</div></div>
+        <div class="prog-row"><div class="prog-label">Tech Support</div><div class="prog-track"><div class="prog-fill" style="width:19%;background:#ef4444;"></div></div><div class="prog-val">3.7%</div></div>
+        <div class="prog-row"><div class="prog-label">Internet Service</div><div class="prog-track"><div class="prog-fill" style="width:14%;background:#c13535;"></div></div><div class="prog-val">2.8%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">HIGH-RISK SUBSCRIBER QUEUE — ACTION REQUIRED</div>
+      <table class="rtable">
+        <thead>
+          <tr><th>ID</th><th>Tenure</th><th>Contract</th><th>Churn Risk</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td style="font-size:10px;color:var(--color-text-secondary);">3668-QPYBK</td><td>2m</td><td>Month-to-month</td><td><span class="pill pill-high">94% High</span></td><td><button class="act-btn" onclick="sendPrompt('Generate personalised retention offer for MTN subscriber 3668-QPYBK: 2-month tenure, month-to-month contract, 94% churn probability. Suggest localised offers including Hausa/Pidgin messaging.')">Offer ↗</button></td></tr>
+          <tr><td style="font-size:10px;color:var(--color-text-secondary);">9237-HQITU</td><td>4m</td><td>Month-to-month</td><td><span class="pill pill-high">89% High</span></td><td><button class="act-btn" onclick="sendPrompt('Create a win-back strategy for subscriber 9237-HQITU with 89% churn risk and Fiber optic service — fiber service issues are likely a key driver.')">Offer ↗</button></td></tr>
+          <tr><td style="font-size:10px;color:var(--color-text-secondary);">1452-KIOVK</td><td>6m</td><td>Month-to-month</td><td><span class="pill pill-high">85% High</span></td><td><button class="act-btn" onclick="sendPrompt('Design a bundle upgrade offer for a 6-month tenure subscriber at 85% churn risk using electronic check payment — electronic check users churn at 45.3%.')">Offer ↗</button></td></tr>
+          <tr><td style="font-size:10px;color:var(--color-text-secondary);">6713-OKOMC</td><td>11m</td><td>Month-to-month</td><td><span class="pill pill-med">71% Med</span></td><td><button class="act-btn" onclick="sendPrompt('What retention offer should we send to a subscriber at 71% churn risk with no online security or tech support add-ons?')">Offer ↗</button></td></tr>
+          <tr><td style="font-size:10px;color:var(--color-text-secondary);">5129-JLPIS</td><td>15m</td><td>One year</td><td><span class="pill pill-med">58% Med</span></td><td><button class="act-btn" onclick="sendPrompt('Suggest a contract upgrade incentive for a one-year subscriber at 58% churn risk to move them to a two-year plan.')">Offer ↗</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">CHURN BY INTERNET SERVICE TYPE</div>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq" style="background:#ef4444;"></span>Fiber optic 41.9%</span>
+        <span class="leg"><span class="leg-sq" style="background:#f59e0b;"></span>DSL 19.0%</span>
+        <span class="leg"><span class="leg-sq" style="background:#22c55e;"></span>No internet 7.4%</span>
+      </div>
+      <div class="chart-wrap" style="height:180px;">
+        <canvas id="internetChart" role="img" aria-label="Horizontal bar chart of churn by internet service: Fiber optic 41.9%, DSL 19.0%, No internet 7.4%">Fiber optic 41.9%, DSL 19.0%, No internet 7.4%.</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">AI-POWERED RETENTION PLAYBOOK</div>
+      <div class="offer-card" onclick="sendPrompt('Draft a Hausa-language SMS for high-risk month-to-month subscribers offering a 3-month discount to switch to a one-year plan. Keep it under 160 characters.')">
+        <div class="offer-icon" aria-hidden="true"><i class="ti ti-star" style="color:#0f7b6c;font-size:16px;"></i></div>
+        <div style="flex:1;">
+          <div class="offer-name">Contract Upgrade — Month→Year</div>
+          <div class="offer-desc">3-month discount + free device protection · Target: 42.7% churn segment</div>
+        </div>
+        <div class="offer-pct">91% accept</div>
+      </div>
+      <div class="offer-card" onclick="sendPrompt('Write a Pidgin English retention message for fiber optic subscribers who called support 2+ times this month. Offer a free speed upgrade for 2 months.')">
+        <div class="offer-icon" aria-hidden="true"><i class="ti ti-wifi" style="color:#0f7b6c;font-size:16px;"></i></div>
+        <div style="flex:1;">
+          <div class="offer-name">Fiber Speed Guarantee</div>
+          <div class="offer-desc">Free 2-month upgrade + SLA commitment · Target: 41.9% churn fiber users</div>
+        </div>
+        <div class="offer-pct">84% accept</div>
+      </div>
+      <div class="offer-card" onclick="sendPrompt('Create a Yoruba-language loyalty reward SMS for subscribers with 49+ months tenure to prevent them from churning despite high monthly charges.')">
+        <div class="offer-icon" aria-hidden="true"><i class="ti ti-heart" style="color:#0f7b6c;font-size:16px;"></i></div>
+        <div style="flex:1;">
+          <div class="offer-name">Loyalty Appreciation Bundle</div>
+          <div class="offer-desc">Free TechSupport + online security · Target: senior &amp; long-tenure segment</div>
+        </div>
+        <div class="offer-pct">76% accept</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── NETWORK HEALTH ─── -->
+<div id="sec-network" class="section">
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#22c55e;"></div>
+      <div class="kpi-label">NETWORK UPTIME</div>
+      <div class="kpi-val" style="color:#166534;">99.94%</div>
+      <div class="kpi-delta up">▲ 0.03% vs last week</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#0f7b6c;"></div>
+      <div class="kpi-label">AVG LATENCY</div>
+      <div class="kpi-val" style="color:#0f7b6c;">14ms</div>
+      <div class="kpi-delta up">▼ 2ms improvement</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#f59e0b;"></div>
+      <div class="kpi-label">ACTIVE ALERTS</div>
+      <div class="kpi-val" style="color:#c87a00;">9</div>
+      <div class="kpi-delta warn">3 critical · 6 warning</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#c13535;"></div>
+      <div class="kpi-label">NODES DEGRADED</div>
+      <div class="kpi-val" style="color:#c13535;">2 / 847</div>
+      <div class="kpi-delta dn">Auto-rerouting active</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title">LIVE NODE STATUS — 847 BASE STATIONS ACROSS NIGERIA</div>
+    <div class="node-grid" style="margin-top:6px;">
+      <div class="node" onclick="sendPrompt('Analyse Lagos Island core node running at 87% capacity — what proactive steps should the NOC take to prevent congestion and what impact does this have on fiber optic subscribers?')">
+        <div class="nd-dot" style="background:#f59e0b;"></div>
+        <div class="nd-load" style="color:#c87a00;">87%</div>
+        <div class="nd-name">Lagos Island</div>
+        <div class="nd-type">5G Core</div>
+      </div>
+      <div class="node" onclick="sendPrompt('Abuja Gateway node is offline affecting 22,400 subscribers. Provide root cause analysis framework and immediate recovery steps.')">
+        <div class="nd-dot" style="background:#ef4444;"></div>
+        <div class="nd-load" style="color:#c13535;">Offline</div>
+        <div class="nd-name">Abuja GW</div>
+        <div class="nd-type">4G Gateway</div>
+      </div>
+      <div class="node" onclick="sendPrompt('Port Harcourt backbone node performance deep-dive — what network KPIs should we monitor for oil-belt enterprise subscribers?')">
+        <div class="nd-dot" style="background:#22c55e;"></div>
+        <div class="nd-load" style="color:#166534;">42%</div>
+        <div class="nd-name">PH Backbone</div>
+        <div class="nd-type">5G Core</div>
+      </div>
+      <div class="node" onclick="sendPrompt('Kano regional node running at 91% — recommend capacity planning strategy including 5G rollout prioritisation for northern Nigeria.')">
+        <div class="nd-dot" style="background:#f59e0b;"></div>
+        <div class="nd-load" style="color:#c87a00;">91%</div>
+        <div class="nd-name">Kano Regional</div>
+        <div class="nd-type">4G Regional</div>
+      </div>
+      <div class="node" onclick="sendPrompt('Ibadan edge node — analyse DSL vs fiber optic quality metrics and churn correlation for Oyo State subscribers.')">
+        <div class="nd-dot" style="background:#22c55e;"></div>
+        <div class="nd-load" style="color:#166534;">58%</div>
+        <div class="nd-name">Ibadan Edge</div>
+        <div class="nd-type">5G Edge</div>
+      </div>
+      <div class="node" onclick="sendPrompt('Enugu transmission node latency spike to 47ms — how does this correlate with the 41.9% churn rate in fiber optic subscribers?')">
+        <div class="nd-dot" style="background:#ef4444;"></div>
+        <div class="nd-load" style="color:#c13535;">47ms⚡</div>
+        <div class="nd-name">Enugu TX</div>
+        <div class="nd-type">Transmission</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">REAL-TIME ALERTS — ML ANOMALY DETECTION</div>
+      <div class="alert-list">
+        <div class="alert-item alert-crit">
+          <span class="abadge ab-crit">CRITICAL</span>
+          <span class="atext">Abuja GW offline — 22,400 subscribers affected. Churn risk elevated +18% for affected zone. Auto-rerouting via Lagos backbone.</span>
+          <span class="atime">3m</span>
+        </div>
+        <div class="alert-item alert-warn">
+          <span class="abadge ab-warn">WARN</span>
+          <span class="atext">Kano Regional at 91% load — predicted saturation in 38 mins. 7,200 Hausa-speaking subscribers at risk. Capacity alert triggered.</span>
+          <span class="atime">11m</span>
+        </div>
+        <div class="alert-item alert-warn">
+          <span class="abadge ab-warn">WARN</span>
+          <span class="atext">Enugu TX latency spike 47ms (+235%). ML model flagged correlation with fiber churn pattern. 340 high-value subscribers in affected cell.</span>
+          <span class="atime">22m</span>
+        </div>
+        <div class="alert-item alert-ok">
+          <span class="abadge ab-ok">RESOLVED</span>
+          <span class="atext">Lagos Island congestion resolved via dynamic traffic shaping. 0 churn signals detected in 15-minute post-incident window.</span>
+          <span class="atime">44m</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">24-HOUR TRAFFIC VOLUME</div>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq" style="background:#0f7b6c;"></span>5G traffic</span>
+        <span class="leg"><span class="leg-sq" style="background:#1e88e5;"></span>4G/LTE</span>
+        <span class="leg"><span class="leg-sq" style="background:#f59e0b;"></span>DSL/Fixed</span>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="trafficChart" role="img" aria-label="Line chart showing 24-hour network traffic for 5G, 4G LTE, and DSL across Nigerian base stations">24h network traffic data across Nigerian base stations.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">NETWORK QUALITY → CHURN CORRELATION — AI INSIGHT</div>
+    <div class="insight-card">
+      <div class="insight-title">Fiber optic quality degradation drives 41.9% churn rate</div>
+      <div class="insight-body">Analysis of 3,096 fiber optic subscribers shows a direct correlation between latency spikes (&gt;30ms) and churn events within 30 days. Enugu TX degradation currently places 340 subscribers in the high-risk queue. Proactive intervention (speed guarantee offer in local language) could prevent ₦25.3M monthly revenue loss.</div>
+      <span class="insight-cta" onclick="sendPrompt('Generate a proactive outreach campaign in Igbo language for Enugu fiber optic subscribers experiencing network degradation — offer a service credit and tech support visit.')">Design intervention ↗</span>
+    </div>
+    <div class="insight-card">
+      <div class="insight-title">Month-to-month + no tech support = 41.6% churn — structural vulnerability</div>
+      <div class="insight-body">2,341 subscribers on month-to-month contracts with no TechSupport add-on represent 33.2% of all churners despite being 23.5% of the base. Bundling tech support into month-to-month plans could reduce this segment's churn from 41.6% to an estimated 15.2%, saving ₦68M monthly.</div>
+      <span class="insight-cta" onclick="sendPrompt('Create a data-backed business case for bundling free TechSupport into all MTN month-to-month plans to reduce the 41.6% churn rate in this segment.')">Model impact ↗</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── MULTILINGUAL SENTIMENT ─── -->
+<div id="sec-sentiment" class="section">
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#22c55e;"></div>
+      <div class="kpi-label">OVERALL NPS SCORE</div>
+      <div class="kpi-val" style="color:#166534;">+41</div>
+      <div class="kpi-delta up">▲ 4 points this month</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#ef4444;"></div>
+      <div class="kpi-label">NEGATIVE SIGNALS</div>
+      <div class="kpi-val" style="color:#c13535;">23%</div>
+      <div class="kpi-delta dn">Hausa &amp; Pidgin dominate</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#0f7b6c;"></div>
+      <div class="kpi-label">MULTILINGUAL COVERAGE</div>
+      <div class="kpi-val" style="color:#0f7b6c;">6 langs</div>
+      <div class="kpi-delta up">WAXAL-powered ASR</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#f59e0b;"></div>
+      <div class="kpi-label">CALLS ANALYSED TODAY</div>
+      <div class="kpi-val" style="color:#c87a00;">14,820</div>
+      <div class="kpi-delta up">▲ 8.4% vs yesterday</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">REAL-TIME SENTIMENT BY LANGUAGE — NLP ENGINE</div>
+      <div style="margin-top: 4px;">
+        <div style="font-size:11px;color:var(--color-text-secondary);margin-bottom:8px;">Positive · Neutral · Negative breakdown per language stream</div>
+
+        <div style="margin-bottom:6px;font-size:12px;font-weight:500;color:var(--color-text-primary);">Hausa <span style="font-size:10px;color:var(--color-text-secondary);font-weight:400;">· 6,840 calls today</span></div>
+        <div class="sbar"><div class="sbar-label"><span style="color:#166534;">Positive 41%</span><span style="color:#c87a00;">Neutral 34%</span><span style="color:#c13535;">Negative 25%</span></div><div class="sbar-track"><div class="sbar-fill" style="width:41%;background:#22c55e;display:inline-block;"></div><div class="sbar-fill" style="width:34%;background:#f59e0b;display:inline-block;"></div><div class="sbar-fill" style="width:25%;background:#ef4444;display:inline-block;"></div></div></div>
+
+        <div style="margin-bottom:6px;margin-top:10px;font-size:12px;font-weight:500;color:var(--color-text-primary);">Pidgin English <span style="font-size:10px;color:var(--color-text-secondary);font-weight:400;">· 4,210 calls today</span></div>
+        <div class="sbar"><div class="sbar-label"><span style="color:#166534;">Positive 38%</span><span style="color:#c87a00;">Neutral 28%</span><span style="color:#c13535;">Negative 34%</span></div><div class="sbar-track"><div style="display:flex;height:6px;"><div style="width:38%;background:#22c55e;border-radius:3px 0 0 3px;"></div><div style="width:28%;background:#f59e0b;"></div><div style="width:34%;background:#ef4444;border-radius:0 3px 3px 0;"></div></div></div></div>
+
+        <div style="margin-bottom:6px;margin-top:10px;font-size:12px;font-weight:500;color:var(--color-text-primary);">Yoruba <span style="font-size:10px;color:var(--color-text-secondary);font-weight:400;">· 2,480 calls today</span></div>
+        <div class="sbar"><div class="sbar-label"><span style="color:#166534;">Positive 54%</span><span style="color:#c87a00;">Neutral 30%</span><span style="color:#c13535;">Negative 16%</span></div><div class="sbar-track"><div style="display:flex;height:6px;"><div style="width:54%;background:#22c55e;border-radius:3px 0 0 3px;"></div><div style="width:30%;background:#f59e0b;"></div><div style="width:16%;background:#ef4444;border-radius:0 3px 3px 0;"></div></div></div></div>
+
+        <div style="margin-bottom:6px;margin-top:10px;font-size:12px;font-weight:500;color:var(--color-text-primary);">Igbo <span style="font-size:10px;color:var(--color-text-secondary);font-weight:400;">· 980 calls today</span></div>
+        <div class="sbar"><div class="sbar-label"><span style="color:#166534;">Positive 49%</span><span style="color:#c87a00;">Neutral 32%</span><span style="color:#c13535;">Negative 19%</span></div><div class="sbar-track"><div style="display:flex;height:6px;"><div style="width:49%;background:#22c55e;border-radius:3px 0 0 3px;"></div><div style="width:32%;background:#f59e0b;"></div><div style="width:19%;background:#ef4444;border-radius:0 3px 3px 0;"></div></div></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">TOP COMPLAINT THEMES — NLP EXTRACTED (ALL LANGUAGES)</div>
+      <div class="alert-list">
+        <div class="alert-item alert-crit">
+          <span class="abadge ab-crit">TOP</span>
+          <span class="atext"><strong>Network speed (Pidgin):</strong> "My data dey finish before time" — 34% of Pidgin complaints. Correlates with fiber churn segment.</span>
+          <span class="atime">Live</span>
+        </div>
+        <div class="alert-item alert-warn">
+          <span class="abadge ab-warn">#2</span>
+          <span class="atext"><strong>Billing confusion (Hausa):</strong> "Kuɗin data ya kare da wuri" (data finished early) — 28% of Hausa calls. Electronic check users most affected.</span>
+          <span class="atime">Live</span>
+        </div>
+        <div class="alert-item alert-warn">
+          <span class="abadge ab-warn">#3</span>
+          <span class="atext"><strong>Call drops (Hausa/Yoruba):</strong> Northern &amp; southwest clusters reporting 3G→5G handoff failures. Kano node congestion likely driver.</span>
+          <span class="atime">Live</span>
+        </div>
+        <div class="alert-item alert-ok">
+          <span class="abadge ab-ok">OK</span>
+          <span class="atext"><strong>Service praise (Yoruba):</strong> "E dara" (It's good) — Ibadan &amp; Lagos Mainland zones. Tenure &gt;48m subscribers express high satisfaction.</span>
+          <span class="atime">Live</span>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="act-btn" style="width:100%;padding:8px;font-size:12px;" onclick="sendPrompt('Using multilingual sentiment data showing 34% negative rate in Pidgin English (network speed complaints) and 25% in Hausa (billing confusion), design a proactive outreach campaign that addresses both issues in their respective languages. Include specific Pidgin and Hausa messaging scripts.')">Generate multilingual response campaign ↗</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title">WAXAL-POWERED SPEECH INTELLIGENCE PIPELINE</div>
+    <div class="insight-card">
+      <div class="insight-title">Google WAXAL ASR → Multilingual Churn Signal Extraction</div>
+      <div class="insight-body">The WAXAL dataset (2,000+ hours West African speech: Hausa, Yoruba, Twi, Pidgin) fine-tunes a Whisper ASR model that transcribes customer support calls in real time. A Hugging Face multilingual BERT classifier then extracts dissatisfaction signals — "My network dey do anyhow" (Pidgin, frustration), "Kuɗina ya tafi" (Hausa, billing complaint) — and feeds them directly into the churn risk score. Today, 847 calls triggered churn risk elevation after multilingual NLP flagged high-dissatisfaction language patterns. Without multilingual processing, these signals would be invisible to English-only models.</div>
+      <span class="insight-cta" onclick="sendPrompt('Explain how to implement a WAXAL + Whisper ASR pipeline for Nigerian telecom customer service calls. Include model fine-tuning steps, integration with churn prediction, and Hausa/Yoruba/Pidgin sentiment classification architecture.')">View pipeline architecture ↗</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── REVENUE ANALYTICS ─── -->
+<div id="sec-revenue" class="section">
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#0f7b6c;"></div>
+      <div class="kpi-label">MONTHLY REVENUE</div>
+      <div class="kpi-val" style="color:#0f7b6c;">₦456B</div>
+      <div class="kpi-delta up">▲ 11.2% YoY</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#0f7b6c;"></div>
+      <div class="kpi-label">ARPU</div>
+      <div class="kpi-val" style="color:#0f7b6c;">₦4,768</div>
+      <div class="kpi-delta up">▲ ₦384 vs last quarter</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#ef4444;"></div>
+      <div class="kpi-label">REVENUE AT RISK</div>
+      <div class="kpi-val" style="color:#c13535;">₦222M</div>
+      <div class="kpi-delta dn">1,869 predicted churners</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-accent" style="background:#f59e0b;"></div>
+      <div class="kpi-label">AI RETENTION SAVES</div>
+      <div class="kpi-val" style="color:#c87a00;">₦38M</div>
+      <div class="kpi-delta up">↑ 340 auto-interventions</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">MONTHLY CHARGES DISTRIBUTION BY CHURN STATUS</div>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq" style="background:#22c55e;"></span>Retained (avg ₦61.3/unit)</span>
+        <span class="leg"><span class="leg-sq" style="background:#ef4444; opacity:0.7;"></span>Churned (avg ₦74.4/unit)</span>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="chargesChart" role="img" aria-label="Bar chart comparing monthly charges distribution between retained and churned subscribers, showing churners pay higher rates on average">Monthly charges: retained subscribers avg 61.3, churned subscribers avg 74.4.</canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">CHURN BY PAYMENT METHOD — REVENUE RISK</div>
+      <div class="legend">
+        <span class="leg"><span class="leg-sq" style="background:#ef4444;"></span>Electronic check 45.3%</span>
+        <span class="leg"><span class="leg-sq" style="background:#22c55e;"></span>Auto payments ~16%</span>
+      </div>
+      <div class="chart-wrap" style="height:200px;">
+        <canvas id="paymentChart" role="img" aria-label="Horizontal bar chart of churn rate by payment method: electronic check 45.3%, mailed check 19.1%, bank transfer 16.7%, credit card 15.2%">Churn by payment: electronic check 45.3%, mailed check 19.1%, bank transfer 16.7%, credit card 15.2%.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">AI-GENERATED REVENUE RECOVERY OPPORTUNITIES</div>
+    <div class="three-col" style="margin-bottom:0;">
+      <div class="insight-card">
+        <div class="insight-title">₦68M/month — TechSupport bundling</div>
+        <div class="insight-body">Bundling TechSupport into month-to-month plans reduces churn from 41.6% to est. 15.2% in that segment. 2,341 subscribers, ₦74.4k avg charge.</div>
+        <span class="insight-cta" onclick="sendPrompt('Build a detailed financial model for bundling TechSupport into MTN month-to-month plans — include cost of bundle, churn reduction impact, and 12-month revenue recovery projection.')">Model ROI ↗</span>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">₦45M/month — e-check to auto-pay migration</div>
+        <div class="insight-body">Electronic check users churn at 45.3% vs 15.2% for auto-pay. 2,365 e-check subscribers represent 19.5% of revenue at risk. Auto-pay incentive campaign target.</div>
+        <span class="insight-cta" onclick="sendPrompt('Design a campaign to migrate 2,365 MTN electronic check payers to automatic bank transfer or credit card — include incentives, messaging in Hausa/Pidgin, and projected churn reduction.')">Design campaign ↗</span>
+      </div>
+      <div class="insight-card">
+        <div class="insight-title">₦34M/month — 0–12 month early intervention</div>
+        <div class="insight-body">New subscribers (0–12 months) churn at 47.4% — nearly 1 in 2. Early-tenure onboarding programme with 90-day engagement plan could halve this rate.</div>
+        <span class="insight-cta" onclick="sendPrompt('Create a 90-day multilingual onboarding programme for new MTN subscribers to reduce the 47.4% churn rate in the 0-12 month tenure segment. Include Hausa, Yoruba and Pidgin touchpoints.')">Build programme ↗</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function switchTab(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+const G = 'rgba(0,0,0,0.06)';
+const T = '#6b7280';
+const baseOpts = (yFmt) => ({
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { grid: { color: G }, ticks: { color: T, font: { size: 11 } } },
+    y: { grid: { color: G }, ticks: { color: T, font: { size: 11 }, callback: yFmt || (v => v) } }
+  }
+});
+
+new Chart(document.getElementById('contractChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Month-to-month', 'One year', 'Two year'],
+    datasets: [{
+      data: [42.7, 11.3, 2.8],
+      backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
+      borderRadius: 5, borderSkipped: false
+    }]
+  },
+  options: { ...baseOpts(v => v + '%'), scales: {
+    x: { grid: { display: false }, ticks: { color: T, font: { size: 11 } } },
+    y: { max: 55, grid: { color: G }, ticks: { color: T, font: { size: 11 }, callback: v => v + '%' } }
+  }}
+});
+
+new Chart(document.getElementById('tenureChart'), {
+  type: 'bar',
+  data: {
+    labels: ['0–12m', '13–24m', '25–48m', '49–72m'],
+    datasets: [{
+      data: [47.4, 28.7, 20.4, 9.5],
+      backgroundColor: ['#ef4444', '#f87171', '#fbbf24', '#22c55e'],
+      borderRadius: 5, borderSkipped: false
+    }]
+  },
+  options: { ...baseOpts(v => v + '%'), scales: {
+    x: { grid: { display: false }, ticks: { color: T, font: { size: 11 } } },
+    y: { max: 60, grid: { color: G }, ticks: { color: T, font: { size: 11 }, callback: v => v + '%' } }
+  }}
+});
+
+new Chart(document.getElementById('internetChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Fiber optic', 'DSL', 'No internet'],
+    datasets: [{
+      data: [41.9, 19.0, 7.4],
+      backgroundColor: ['#ef4444', '#f59e0b', '#22c55e'],
+      borderRadius: 5, borderSkipped: false,
+      indexAxis: undefined
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { max: 55, grid: { color: G }, ticks: { color: T, font: { size: 11 }, callback: v => v + '%' } },
+      y: { grid: { display: false }, ticks: { color: T, font: { size: 11 } } }
+    }
+  }
+});
+
+const hours = ['00','02','04','06','08','10','12','14','16','18','20','22'];
+new Chart(document.getElementById('trafficChart'), {
+  type: 'line',
+  data: {
+    labels: hours,
+    datasets: [
+      { label: '5G', data: [14,11,9,13,22,38,55,60,62,65,58,48], borderColor: '#0f7b6c', backgroundColor: 'rgba(15,123,108,0.08)', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 0 },
+      { label: '4G', data: [26,20,18,22,34,45,48,50,52,49,44,38], borderColor: '#1e88e5', backgroundColor: 'rgba(30,136,229,0.06)', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 0 },
+      { label: 'DSL', data: [18,16,15,16,19,24,26,28,28,27,25,22], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.05)', tension: 0.4, fill: true, borderWidth: 2, pointRadius: 0 }
+    ]
+  },
+  options: { ...baseOpts(v => v + 'Gbps') }
+});
+
+new Chart(document.getElementById('chargesChart'), {
+  type: 'bar',
+  data: {
+    labels: ['18–35', '35–55', '55–75', '75–95', '95–119'],
+    datasets: [
+      { label: 'Retained', data: [980, 1240, 1320, 980, 654], backgroundColor: 'rgba(34,197,94,0.7)', borderRadius: 4 },
+      { label: 'Churned', data: [180, 290, 480, 560, 359], backgroundColor: 'rgba(239,68,68,0.65)', borderRadius: 4 }
+    ]
+  },
+  options: { ...baseOpts(v => v.toLocaleString()), plugins: { legend: { display: false } }, scales: {
+    x: { grid: { display: false }, ticks: { color: T, font: { size: 11 } } },
+    y: { grid: { color: G }, ticks: { color: T, font: { size: 11 } } }
+  }}
+});
+
+new Chart(document.getElementById('paymentChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Electronic check', 'Mailed check', 'Bank transfer', 'Credit card'],
+    datasets: [{
+      data: [45.3, 19.1, 16.7, 15.2],
+      backgroundColor: ['#ef4444', '#fb923c', '#22c55e', '#22c55e'],
+      borderRadius: 5
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { max: 55, grid: { color: G }, ticks: { color: T, font: { size: 11 }, callback: v => v + '%' } },
+      y: { grid: { display: false }, ticks: { color: T, font: { size: 11 } } }
+    }
+  }
+});
+</script>
